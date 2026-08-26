@@ -58,6 +58,10 @@ juce::AudioProcessorValueTreeState::ParameterLayout SliceomatAudioProcessor::cre
         juce::ParameterID{"filterEnvMod", 1}, "Filter Env Mod",
         juce::NormalisableRange<float>(0.0f, 1.0f, 0.001f), 1.0f));
 
+    params.push_back(std::make_unique<juce::AudioParameterChoice>(
+        juce::ParameterID{"filterType", 1}, "Filter",
+        sliceomat::filterTypeNames(), 0));
+
     return {params.begin(), params.end()};
 }
 
@@ -105,7 +109,8 @@ void SliceomatAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juc
                       *apvts.getRawParameterValue("pitch"),
                       *apvts.getRawParameterValue("reso"),
                       *apvts.getRawParameterValue("volMod"),
-                      *apvts.getRawParameterValue("filterEnvMod"));
+                      *apvts.getRawParameterValue("filterEnvMod"),
+                      (int) *apvts.getRawParameterValue("filterType"));
 
     int sample = 0;
     const int numSamples = buffer.getNumSamples();

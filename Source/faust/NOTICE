@@ -1,0 +1,8 @@
+Faust virtual-analog filter DSP vendored from:
+
+  https://github.com/SpotlightKid/faustfilters
+
+Generated with the Faust compiler and faustpp. Original .dsp models
+come from the Faust standard library (authors noted in each header).
+
+License: MIT-style STK-4.3 / ISC (see file headers).

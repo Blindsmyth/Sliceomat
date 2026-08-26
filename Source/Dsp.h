@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <cstdint>
 #include <juce_dsp/juce_dsp.h>
+#include "Filters.h"
 
 namespace sliceomat
 {
@@ -103,13 +104,9 @@ struct Engine
     {
         sampleRate = sampleRateToUse;
         envelope.prepare(sampleRate);
-        noise.reset();
-
-        juce::dsp::ProcessSpec spec{sampleRate, (juce::uint32)samplesPerBlock, 1};
-        lpfL.prepare(spec);
-        lpfR.prepare(spec);
-        lpfL.setType(juce::dsp::StateVariableTPTFilterType::lowpass);
-        lpfR.setType(juce::dsp::StateVariableTPTFilterType::lowpass);
+        noiseL.reset(0xA341316Cu);
+        noiseR.reset(0xC2B2AE35u);
+        filters.prepare(sampleRate, samplesPerBlock);
 
         const float smoothSec = 0.02f;
         gain1.reset(sampleRate, smoothSec);
@@ -119,24 +116,19 @@ struct Engine
         reso.reset(sampleRate, smoothSec);
         filterEnvMod.reset(sampleRate, smoothSec);
 
-        lpfL.reset();
-        lpfR.reset();
+        filters.reset();
         envelope.reset();
-        lastCutoff = -1.0f;
-        lastReso = -1.0f;
     }
 
     void reset()
     {
         envelope.reset();
-        lpfL.reset();
-        lpfR.reset();
-        lastCutoff = -1.0f;
-        lastReso = -1.0f;
+        filters.reset();
     }
 
     void setTargets(float g1, float g2, float attack, float decay,
-                    float pitchMidi, float resonance, float vol, float fenv)
+                    float pitchMidi, float resonance, float vol, float fenv,
+                    int filterType)
     {
         gain1.setTargetValue(g1);
         gain2.setTargetValue(g2);
@@ -145,6 +137,8 @@ struct Engine
         reso.setTargetValue(resonance);
         filterEnvMod.setTargetValue(fenv);
         envelope.setTimes(attack, decay);
+        filters.setType((FilterType) juce::jlimit(
+            0, (int) FilterType::NumTypes - 1, filterType));
     }
 
     void trigger() { envelope.trigger(); }
@@ -168,29 +162,20 @@ struct Engine
             const float fm = filterEnvMod.getNextValue();
 
             const float vcaGain = 1.0f + (env - 1.0f) * vm; // lerp(1, env, volMod)
-            const float n = noise.next();
+            const float nL = noiseL.next();
+            const float nR = noiseR.next();
 
             const float cutoffMidi = p + env * fm * filterEnvSpanSemitones;
             const float cutoffHz = juce::jlimit(20.0f, nyquistLimit, midiToHz(cutoffMidi));
-            const float q = juce::jlimit(0.05f, 0.98f, r);
-
-            if (std::abs(cutoffHz - lastCutoff) > 0.1f || std::abs(q - lastReso) > 0.001f)
-            {
-                lpfL.setCutoffFrequency(cutoffHz);
-                lpfR.setCutoffFrequency(cutoffHz);
-                lpfL.setResonance(q);
-                lpfR.setResonance(q);
-                lastCutoff = cutoffHz;
-                lastReso = q;
-            }
+            const float q = mapResoToQ(filters.getType(), r);
 
             const float inL = left[i];
-            left[i] = lpfL.processSample(0, (n * g1 + inL * g2) * vcaGain);
+            left[i] = filters.process(0, (nL * g1 + inL * g2) * vcaGain, cutoffHz, q);
 
             if (right != nullptr)
             {
                 const float inR = right[i];
-                right[i] = lpfR.processSample(0, (n * g1 + inR * g2) * vcaGain);
+                right[i] = filters.process(1, (nR * g1 + inR * g2) * vcaGain, cutoffHz, q);
             }
         }
     }
@@ -198,11 +183,9 @@ struct Engine
 private:
     double sampleRate = 44100.0;
     AttackDecayEnvelope envelope;
-    WhiteNoise noise;
-    juce::dsp::StateVariableTPTFilter<float> lpfL, lpfR;
+    WhiteNoise noiseL, noiseR;
+    FilterBank filters;
     juce::SmoothedValue<float> gain1, gain2, volMod, pitch, reso, filterEnvMod;
-    float lastCutoff = -1.0f;
-    float lastReso = -1.0f;
 };
 
 } // namespace sliceomat

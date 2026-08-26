@@ -1,6 +1,6 @@
 # Slice-O-Mat
 
-Music effect (AU / VST3 / Standalone): live stereo input plus white noise through a mix, MIDI-triggered AD envelope into a VCA, then a resonant low-pass.
+Music effect (AU / VST3 / Standalone): live stereo input plus uncorrelated stereo white noise through a mix, MIDI-triggered AD envelope into a VCA, then a selectable virtual-analog filter.
 
 Any MIDI note-on on any channel retriggers the envelope. Note-off is ignored.
 
@@ -17,13 +17,16 @@ In Logic, load **Slice-O-Mat** as a MIDI-controlled Effect so it receives audio 
 
 ## Parameters
 
-| Knob | Role |
+| Control | Role |
 | --- | --- |
+| Filter | SVF LPF, Diode Ladder, Korg 35 LPF/HPF, Moog Ladder, Moog Half Ladder, Oberheim LP/HP/BP/Notch |
 | Noise / Input | Mix gains |
 | Attack / Decay | AD envelope times |
 | Vol Mod | 1 = VCA follows env, 0 = VCA stays open |
 | Pitch / Reso / Flt Env | Filter cutoff (MIDI note), resonance, envelope to cutoff |
 
+VA filter models are generated Faust DSP from [faustfilters](https://github.com/SpotlightKid/faustfilters).
+
 ## License
 
-AGPL-3.0-or-later (JUCE). See [LICENSE](LICENSE).
+AGPL-3.0-or-later (JUCE). Faust filter DSP is STK-4.3 / ISC. See [LICENSE](LICENSE).

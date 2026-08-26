@@ -43,9 +43,26 @@ target_sources(Sliceomat
         Source/PluginEditor.cpp
         Source/PluginEditor.h
         Source/Dsp.h
+        Source/Filters.h
+        Source/faust/DiodeLadder.cpp
+        Source/faust/Korg35HPF.cpp
+        Source/faust/Korg35LPF.cpp
+        Source/faust/MoogHalfLadder.cpp
+        Source/faust/MoogLadder.cpp
+        Source/faust/Oberheim.cpp
 )
 
-target_include_directories(Sliceomat PRIVATE Source)
+target_include_directories(Sliceomat PRIVATE Source Source/faust)
+
+set_source_files_properties(
+    Source/faust/DiodeLadder.cpp
+    Source/faust/Korg35HPF.cpp
+    Source/faust/Korg35LPF.cpp
+    Source/faust/MoogHalfLadder.cpp
+    Source/faust/MoogLadder.cpp
+    Source/faust/Oberheim.cpp
+    PROPERTIES COMPILE_FLAGS "-w"
+)
 
 target_compile_definitions(Sliceomat
     PUBLIC

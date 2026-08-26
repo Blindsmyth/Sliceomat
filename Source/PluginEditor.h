@@ -23,6 +23,10 @@ private:
 
     SliceomatAudioProcessor& audioProcessor;
 
+    juce::ComboBox filterBox;
+    juce::Label filterLabel;
+    std::unique_ptr<juce::AudioProcessorValueTreeState::ComboBoxAttachment> filterAttachment;
+
     Knob noise;
     Knob input;
     Knob attack;

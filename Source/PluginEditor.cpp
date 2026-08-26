@@ -6,11 +6,27 @@ constexpr int kKnobW = 96;
 constexpr int kKnobH = 118;
 constexpr int kPad = 16;
 constexpr int kTitleH = 36;
+constexpr int kFilterH = 36;
 }
 
 SliceomatAudioProcessorEditor::SliceomatAudioProcessorEditor(SliceomatAudioProcessor& p)
     : AudioProcessorEditor(&p), audioProcessor(p)
 {
+    filterLabel.setText("Filter", juce::dontSendNotification);
+    filterLabel.setJustificationType(juce::Justification::centredLeft);
+    filterLabel.setColour(juce::Label::textColourId, juce::Colour(0xfff2e6d8));
+    filterLabel.setFont(juce::FontOptions(13.0f, juce::Font::bold));
+    addAndMakeVisible(filterLabel);
+
+    filterBox.addItemList(sliceomat::filterTypeNames(), 1);
+    filterBox.setColour(juce::ComboBox::backgroundColourId, juce::Colour(0xff2a2622));
+    filterBox.setColour(juce::ComboBox::textColourId, juce::Colour(0xfff2e6d8));
+    filterBox.setColour(juce::ComboBox::outlineColourId, juce::Colour(0xff3a3530));
+    filterBox.setColour(juce::ComboBox::arrowColourId, juce::Colour(0xffe07a3d));
+    addAndMakeVisible(filterBox);
+    filterAttachment = std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment>(
+        audioProcessor.apvts, "filterType", filterBox);
+
     setupKnob(noise, "gain1", "Noise");
     setupKnob(input, "gain2", "Input");
     setupKnob(attack, "attack", "Attack");
@@ -24,7 +40,7 @@ SliceomatAudioProcessorEditor::SliceomatAudioProcessorEditor(SliceomatAudioProce
     decay.slider.setTextValueSuffix(" s");
     pitch.slider.setNumDecimalPlacesToDisplay(1);
 
-    setSize(kPad * 2 + kKnobW * 4, kTitleH + kPad + kKnobH * 2 + kPad);
+    setSize(kPad * 2 + kKnobW * 4, kTitleH + kFilterH + kPad + kKnobH * 2 + kPad);
 }
 
 void SliceomatAudioProcessorEditor::setupKnob(Knob& knob, const juce::String& paramId, const juce::String& title)
@@ -64,6 +80,11 @@ void SliceomatAudioProcessorEditor::paint(juce::Graphics& g)
 void SliceomatAudioProcessorEditor::resized()
 {
     auto area = getLocalBounds().withTrimmedTop(kTitleH).reduced(kPad);
+    auto filterRow = area.removeFromTop(kFilterH);
+    filterLabel.setBounds(filterRow.removeFromLeft(56));
+    filterBox.setBounds(filterRow.withHeight(24).withY(filterRow.getY() + 4));
+    area.removeFromTop(4);
+
     const int rowH = kKnobH;
     auto place = [&](Knob& knob, juce::Rectangle<int> cell)
     {
